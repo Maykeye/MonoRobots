@@ -69,11 +69,14 @@ public class GameMap
 
         foreach (var cell in map)
         {
-            var delta = playerPos - cell.Position;
-            delta.X = Math.Sign(delta.X);
-            delta.Y = Math.Sign(delta.Y);
             var newCell = cell;
-            newCell.Position += delta;
+            if (cell.Kind == CellKind.Robot)
+            {
+                var delta = playerPos - cell.Position;
+                delta.X = Math.Sign(delta.X);
+                delta.Y = Math.Sign(delta.Y);
+                newCell.Position += delta;
+            }
             newMap.Add(newCell);
         }
         map = newMap;

@@ -1,7 +1,5 @@
 using Xunit;
 using Shouldly;
-using System.Text.Json;
-using System.Drawing;
 namespace MonoRobots.Tests;
 
 public class MockRng : Random
@@ -152,7 +150,7 @@ public class DummyTest
     [InlineData(12, 1, 11, 2)]
     [InlineData(9, 21, 10, 20)]
     [InlineData(12, 21, 11, 20)]
-    public void TestMove(int x0, int y0, int x1, int y1)
+    public void TestMoveRobot(int x0, int y0, int x1, int y1)
     {
         var rng = new MockRng();
         var map = new GameMap(32, 24, rng);
@@ -176,5 +174,21 @@ public class DummyTest
         found = map.GetAt(new(x1, y1), ents);
         found.ShouldBeTrue($"Robot should move to {x1} {y1}; {map.MapDump()}");
         ents.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void TestMoveGarbage()
+    {
+        var rng = new MockRng();
+        var map = new GameMap(32, 24, rng);
+        rng.EnqueueInts([10, 12]);
+        map.Reset(1);
+        map.SetPlayerPosition(10, 10);
+        bool ok = map.Spawn(new(4, 5), CellKind.Garbage);
+        ok.ShouldBeTrue("Spawn garbo");
+        map.Step();
+        ok = map.GetAt(new(4, 5), []);
+        ok.ShouldBeTrue("Garbo didn't stay");
+        map.map.Count.ShouldBe(3, "Player + Robot + Garbo");
     }
 }
