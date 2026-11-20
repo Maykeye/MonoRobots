@@ -1,0 +1,9 @@
+stdout.txt
+*.xnb
+Content/bin/
+Content/obj/
+Tests/*/bin
+Tests/*/obj
+Platforms/*/bin/
+Platforms/*/obj/
+.vscode
