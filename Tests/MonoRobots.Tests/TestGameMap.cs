@@ -2,8 +2,6 @@ using Xunit;
 using Shouldly;
 namespace MonoRobots.Tests;
 
-using static Utils;
-
 public class TestGameMap
 {
 
@@ -58,8 +56,7 @@ public class TestGameMap
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
         map.SafeStep();
-        var found = map.GetAt(new(18, 12), cells);
-        found.ShouldBeFalse($"Robot should move {Str(cells)}");
+        map.ValidateRobots([17, 12]);
         map.ValidateRbtGarbo(1, 0);
     }
 
