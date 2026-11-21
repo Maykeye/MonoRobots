@@ -1,6 +1,27 @@
 using Xunit;
 using Shouldly;
+using System.Linq;
 namespace MonoRobots.Tests;
+
+public static class GameMapExtension
+{
+    public static Cell GetPlayer(this GameMap gameMap)
+    {
+        var plys = gameMap.FindKind(CellKind.Player);
+        plys.Count.ShouldBe(1, "Exactly one player should exist");
+        return plys[0];
+    }
+
+    public static List<Cell> FindKind(this GameMap gameMap, CellKind kind)
+    {
+        var foundCells = gameMap.map.Values
+            .SelectMany(val => val) // flatten [[a,b,c], [d,e,f]] => [a,b,c,d,e,f]
+            .Where(cell => cell.Kind == kind)
+            .ToList();
+
+        return foundCells;
+    }
+}
 
 public class DummyTest
 {
@@ -143,14 +164,14 @@ public class DummyTest
         var rng = new MockRng();
         var map = new GameMap(32, 24, rng);
         rng.EnqueueInts([10, 12]);
-        map.Reset(1);
+        map.Reset(0);
         map.SetPlayerPosition(10, 10);
         bool ok = map.Spawn(new(4, 5), CellKind.Garbage);
         ok.ShouldBeTrue("Spawn garbo");
         map.Step();
         ok = map.GetAt(new(4, 5), []);
         ok.ShouldBeTrue("Garbo didn't stay");
-        map.map.Count.ShouldBe(3, "Player + Robot + Garbo");
+        map.map.Count.ShouldBe(2, "Player + Garbo");
     }
 
     [Theory]
@@ -163,8 +184,8 @@ public class DummyTest
         map.Spawn(new(cx + dx2, cy + dy2), CellKind.Robot);
         map.Step();
 
-        int robots = map.map.Count(ent => ent.Kind == CellKind.Robot);
-        int garbo = map.map.Count(ent => ent.Kind == CellKind.Garbage);
+        int robots = map.FindKind(CellKind.Robot).Count;
+        int garbo = map.FindKind(CellKind.Garbage).Count;
         robots.ShouldBe(0);
         garbo.ShouldBe(1);
     }

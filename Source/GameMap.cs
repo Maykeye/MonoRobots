@@ -1,15 +1,18 @@
 using System.Runtime.CompilerServices;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using System.Text;
 [assembly: InternalsVisibleTo("MonoRobots.Tests")]
 namespace MonoRobots;
 
+public abstract record PlayerTurn;
+public record Player_DoNothing : PlayerTurn;
+public record Player_Move(Point Delta) : PlayerTurn;
+public record Player_Teleport() : PlayerTurn;
+
 
 // TODO: remove me
-
 public enum CellKind
 {
     Player,
@@ -32,11 +35,9 @@ public struct Cell
 
 public class GameMap
 {
-    internal List<Cell> map;
+    internal Dictionary<Point, List<Cell>> map;
     Point size;
     readonly Random rng;
-
-
 
     public GameMap(int width = 32, int height = 32, Random rng = null)
     {
@@ -64,28 +65,6 @@ public class GameMap
 
     public void Step()
     {
-        var newMap = new List<Cell>(map.Count);
-        var playerPos = GetPlayer().Position;
-        var occupied = new Dictionary<Point, int>{
-            {playerPos, 1}
-        };
-
-        foreach (var cell in map)
-        {
-            var newCell = cell;
-            if (cell.Kind == CellKind.Robot)
-            {
-                var delta = playerPos - cell.Position;
-                delta.X = Math.Sign(delta.X);
-                delta.Y = Math.Sign(delta.Y);
-                newCell.Position += delta;
-            }
-
-            int old = occupied.GetValueOrDefault(newCell.Position, 0);
-            occupied.Add(newCell.Position, old + 1);
-            newMap.Add(newCell);
-        }
-        map = newMap;
     }
 
     private Point RandomPos()
@@ -96,7 +75,7 @@ public class GameMap
     public bool GetAt(Point pos, ICollection<Cell> cells)
     {
         bool res = false;
-        foreach (var cell in map.Where(cell => cell.Position == pos))
+        foreach (var cell in map.GetValueOrDefault(pos, []))
         {
             cells.Add(cell);
             res = true;
@@ -116,7 +95,10 @@ public class GameMap
             Position = point,
             Kind = kind
         };
-        map.Add(cell);
+
+        var occupants = map.GetValueOrDefault(point, []);
+        occupants.Add(cell);
+        map[point] = occupants;
         return true;
     }
 
@@ -132,26 +114,24 @@ public class GameMap
         return sb.ToString();
     }
 
-    public bool SetPlayerPosition(int x, int y)
+    public void SetPlayerPosition(int x, int y)
     {
-        for (int i = 0; i < map.Count; i++)
+        foreach (var (pos, ocs) in map)
         {
-            if (map[i].Kind == CellKind.Player)
+            if (ocs.Count == 1)
             {
-                var ply = map[i];
-                ply.Position = new Point(x, y);
-                map[i] = ply;
-                return true;
+                map.Remove(pos);
+                break;
             }
         }
-        return false;
-    }
-    public Cell GetPlayer()
-    {
-        return map.FirstOrDefault(
-            ent => ent.Kind == CellKind.Player,
-            new Cell { Kind = CellKind.Player }
-        );
+        var ply = new Cell
+        {
+            Position = new(x, y),
+            Kind = CellKind.Player
+        };
+        var plyCellOcs = map.GetValueOrDefault(ply.Position, []);
+        plyCellOcs.Add(ply);
+        map[ply.Position] = plyCellOcs;
     }
 }
 
