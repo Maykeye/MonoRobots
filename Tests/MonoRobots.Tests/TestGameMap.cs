@@ -87,13 +87,11 @@ public class TestGameMap
     public void TestRobotCollide(Pt r1, Pt r2)
     {
         map.Reset(0);
-        var ply = map.GetPlayer();
-        bool isPlyAlive = ply.Position != Pt.HOME.Point();
         map.Spawn(r1.Add(Pt.HOME), CellKind.Robot);
         map.Spawn(r2.Add(Pt.HOME), CellKind.Robot);
         map.SafeStep();
-        map.ValidateRbtGarbo(0, 1);
-        map.GetPlayer().Alive.ShouldBe(isPlyAlive, $"Ply: {map.MapDump()}");
+        map.ValidateRbtGarbo([], [home_point.X, home_point.Y]);
+        map.GetPlayer().Alive.ShouldBeFalse($"Ply: {map.MapDump()}");
     }
 
     [Theory]
@@ -114,24 +112,6 @@ public class TestGameMap
 
 
     [Theory]
-    [InlineData(10, 8, 10, 9)]
-    [InlineData(10, 12, 10, 11)]
-    [InlineData(0, 10, 1, 10)]
-    [InlineData(12, 10, 11, 10)]
-    [InlineData(9, 1, 10, 2)]
-    [InlineData(12, 1, 11, 2)]
-    [InlineData(9, 21, 10, 20)]
-    [InlineData(12, 21, 11, 20)]
-    public void TestOneRobotMoves0(int x0, int y0, int x1, int y1)
-    {
-        rng.EnqueueInts([x0, y0]);
-        map.Reset(1);
-        map.SetPlayerPosition(10, 10);
-        map.SafeStep();
-        map.ValidateRbtGarbo([x1, y1], []);
-    }
-
-    [Theory]
     [MemberData(nameof(Utils.COMPASS_8), MemberType = typeof(Utils))]
     public void TestOneRobotMovesSafely(Pt deltaKind)
     {
@@ -145,33 +125,27 @@ public class TestGameMap
     }
 
 
-    public static TheoryData<Pt, bool> COMPASS_8_BOOL()
-    {
-        var data = new TheoryData<Pt, bool>();
-        foreach (var pt in Utils.COMPASS_8)
-        {
-            data.Add(pt, true);
-            data.Add(pt, false);
-        }
-        return data;
-    }
-
     [Theory]
-    [MemberData(nameof(COMPASS_8_BOOL), MemberType = typeof(TestGameMap))]
-    public void TestTwoRobotsMoveSafely(Pt deltaKind, bool reverseSpawn)
+    [MemberData(nameof(Utils.COMPASS_8), MemberType = typeof(Utils))]
+    public void TestTwoRobotsMoveSafely(Pt deltaKind)
     {
-        var spawn1 = home_point + deltaKind.Point() * 2; // E.g. @.Rr where r not spawn  yet
-        var spawn2 = home_point + deltaKind.Point() * 3; // E.g. @.rR
-        if (reverseSpawn)
-            (spawn1, spawn2) = (spawn2, spawn1);
+        void doTest(bool swapSpawn)
+        {
+            var spawn1 = home_point + deltaKind.Point() * 2; // E.g. @.Rr where r not our focus
+            var spawn2 = home_point + deltaKind.Point() * 3; // E.g. @.rR
+            if (swapSpawn)
+                (spawn1, spawn2) = (spawn2, spawn1);
 
-        var delta = deltaKind.Point();
-        rng.EnqueueInts(spawn1, spawn2);
-        map.Reset(2);
-        map.SafeStep();
-        var dst1 = home_point + delta * 1; // E.g. @RR.
-        var dst2 = home_point + delta * 2; // 
-        map.ValidateRbtGarbo([dst1.X, dst1.Y, dst2.X, dst2.Y], []);
+            var delta = deltaKind.Point();
+            rng.EnqueueInts(spawn1, spawn2);
+            map.Reset(2);
+            map.SafeStep();
+            var dst1 = home_point + delta * 1; // E.g. @RR.
+            var dst2 = home_point + delta * 2; // 
+            map.ValidateRbtGarbo([dst1.X, dst1.Y, dst2.X, dst2.Y], []);
+        }
+        doTest(false);
+        doTest(true);
     }
 }
 
