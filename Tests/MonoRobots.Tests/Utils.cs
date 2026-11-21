@@ -34,6 +34,50 @@ public static class GameMapExtension
     {
         return gameMap.FindKind(kind).Count;
     }
+
+
+    public static void ValidateRobots(this GameMap gameMap, params int[] xys)
+    {
+        (xys.Length % 2).ShouldBe(0, "Internal error: pass XYs pairs");
+        for (int i = 0; i < xys.Length; i += 2)
+        {
+            var xy = new Point(xys[i], xys[i + 1]);
+            var robots = gameMap.map.GetValueOrDefault(xy, [])
+                .Count(cell => cell.Kind == CellKind.Robot);
+            robots.ShouldBe(1, $"At {xy} expected 1 robot, not {robots}");
+        }
+        gameMap.Count(CellKind.Robot).ShouldBe(xys.Length / 2, $"{gameMap.MapDump()}");
+    }
+
+    // Do map test and validate pos (key==value.pos)
+    public static void ValidateMapInternalPos(this GameMap gameMap, string pfx = "Err")
+    {
+        foreach (var (posExpected, ents) in gameMap.map)
+        {
+            foreach (var ent in ents)
+            {
+                ent.Position.ShouldBe(posExpected, $"{pfx}@{posExpected}: {gameMap.MapDump()}");
+            }
+        }
+    }
+
+    public static void ValidateRbtGarbo(this GameMap gameMap, int rob, int garbo)
+    {
+        gameMap.Count(CellKind.Player).ShouldBe(1, "Map invariant broken");
+        gameMap.Count(CellKind.Robot).ShouldBe(rob);
+        gameMap.Count(CellKind.Garbage).ShouldBe(garbo);
+    }
+
+    public static void SafeStep(this GameMap gameMap, int n = 1)
+    {
+        gameMap.ValidateMapInternalPos("Before step 1");
+        for (int i = 0; i < n; i++)
+        {
+            gameMap.Step();
+            gameMap.ValidateMapInternalPos($"After number of steps done: {i + 1}");
+        }
+    }
+
 }
 public static class PtExtension
 {
@@ -62,6 +106,12 @@ public static class Utils
         Pt.SE => new(1, 1),
         _ => throw new Exception("Internal error")
     };
+
+    public static string Str(IEnumerable<Cell> cells)
+    {
+        return "[" + string.Join(", ", cells) + "]";
+    }
+
 
 
 }

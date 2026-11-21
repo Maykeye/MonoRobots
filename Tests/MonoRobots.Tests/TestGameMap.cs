@@ -1,7 +1,8 @@
 using Xunit;
 using Shouldly;
-using Microsoft.Xna.Framework;
 namespace MonoRobots.Tests;
+
+using static Utils;
 
 public class TestGameMap
 {
@@ -17,51 +18,6 @@ public class TestGameMap
         map = new GameMap(32, 24, rng);
     }
 
-    void Step()
-    {
-        ValidateMapInternalPos("Before Step");
-        map.Step();
-        ValidateMapInternalPos("After Step");
-    }
-
-
-    private string Str(IEnumerable<Cell> cells)
-    {
-        return "[" + string.Join(", ", cells) + "]";
-    }
-
-    // Do map test and validate pos (key==value.pos)
-    void ValidateMapInternalPos(string pfx = "Err")
-    {
-        foreach (var (posExpected, ents) in map.map)
-        {
-            foreach (var ent in ents)
-            {
-                ent.Position.ShouldBe(posExpected, $"{pfx}@{posExpected}: {map.MapDump()}");
-            }
-        }
-    }
-
-    void ValidateRbtGarbo(int rob, int garbo)
-    {
-        map.Count(CellKind.Player).ShouldBe(1, "Map invariant broken");
-        map.Count(CellKind.Robot).ShouldBe(rob);
-        map.Count(CellKind.Garbage).ShouldBe(garbo);
-    }
-
-    void ValidateRobots(params int[] xys)
-    {
-        (xys.Length % 2).ShouldBe(0, "Internal error: pass XYs pairs");
-        for (int i = 0; i < xys.Length; i += 2)
-        {
-            var xy = new Point(xys[i], xys[i + 1]);
-            var robots = map.map.GetValueOrDefault(xy, [])
-                .Count(cell => cell.Kind == CellKind.Robot);
-            robots.ShouldBe(1, $"At {xy} expected 1 robot, not {robots}");
-        }
-        map.Count(CellKind.Robot).ShouldBe(xys.Length / 2, $"{map.MapDump()}");
-    }
-
     [Theory]
     [InlineData(0, true)]
     [InlineData(1, true)]
@@ -72,16 +28,12 @@ public class TestGameMap
     {
         rng.EnqueueInts([18, 12]); // x=ply.x+2, y=ply.y
         map.Reset(1);
-
-        for (int i = 0; i < turns; i++)
-        {
-            Step();
-        }
+        map.SafeStep(turns);
         var ply = map.GetPlayer();
         ply.Position.X.ShouldBe(16, "Map width/2");
         ply.Position.Y.ShouldBe(12, "Map height/2");
         ply.Alive.ShouldBe(alive);
-        ValidateRbtGarbo(1, 0);
+        map.ValidateRbtGarbo(1, 0);
     }
 
     [Fact]
@@ -89,7 +41,7 @@ public class TestGameMap
     {
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
-        ValidateRobots(18, 12);
+        map.ValidateRobots(18, 12);
     }
 
     [Fact]
@@ -97,7 +49,7 @@ public class TestGameMap
     {
         rng.EnqueueInts([18, 12, 18, 12, 19, 12]);
         map.Reset(2);
-        ValidateRobots(18, 12, 19, 12);
+        map.ValidateRobots(18, 12, 19, 12);
     }
 
     [Fact]
@@ -105,10 +57,10 @@ public class TestGameMap
     {
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
-        Step();
+        map.SafeStep();
         var found = map.GetAt(new(18, 12), cells);
         found.ShouldBeFalse($"Robot should move {Str(cells)}");
-        ValidateRbtGarbo(1, 0);
+        map.ValidateRbtGarbo(1, 0);
     }
 
     [Fact]
@@ -116,8 +68,8 @@ public class TestGameMap
     {
         map.Reset(2);
         map.SetPlayerPosition(2, 4);
-        ValidateMapInternalPos();
-        ValidateRbtGarbo(2, 0);
+        map.ValidateMapInternalPos();
+        map.ValidateRbtGarbo(2, 0);
     }
 
     [Theory]
@@ -134,7 +86,7 @@ public class TestGameMap
         rng.EnqueueInts([x0, y0]);
         map.Reset(1);
         map.SetPlayerPosition(10, 10);
-        Step();
+        map.SafeStep();
         map.map.Count.ShouldBe(2, "Player + Robot");
 
         var plyPos = map.GetPlayer().Position;
@@ -161,7 +113,7 @@ public class TestGameMap
         map.SetPlayerPosition(10, 10);
         bool ok = map.Spawn(new(4, 5), CellKind.Garbage);
         ok.ShouldBeTrue("Spawn garbo");
-        Step();
+        map.SafeStep();
         ok = map.GetAt(new(4, 5), cells);
         ok.ShouldBeTrue($"Garbo didn't stay: {map.MapDump()}");
         map.map.Count.ShouldBe(2, "Player + Garbo");
@@ -187,9 +139,8 @@ public class TestGameMap
         bool isPlyAlive = ply.Position != cur.Point();
         map.Spawn(r1.Add(cur), CellKind.Robot);
         map.Spawn(r2.Add(cur), CellKind.Robot);
-        Step();
-        map.Count(CellKind.Robot).ShouldBe(0, $"Rbt: {map.MapDump()}");
-        map.Count(CellKind.Garbage).ShouldBe(1);
+        map.SafeStep();
+        map.ValidateRbtGarbo(0, 1);
         map.GetPlayer().Alive.ShouldBe(isPlyAlive, $"Ply: {map.MapDump()}");
     }
 }
