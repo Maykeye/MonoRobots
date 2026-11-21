@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using System.Text;
+using System.Linq;
 [assembly: InternalsVisibleTo("MonoRobots.Tests")]
 namespace MonoRobots;
 
@@ -65,6 +66,47 @@ public class GameMap
 
     public void Step()
     {
+        var player = GetPlayer();
+        var newMap = new Dictionary<Point, List<Cell>>();
+
+        // Copy unmoveable garbo
+        foreach (var garbo in map.Values
+                .SelectMany(x => x)
+                .Where(cell => cell.Kind == CellKind.Garbage))
+        {
+            var garboCells = newMap.GetValueOrDefault(garbo.Position, []);
+            garboCells.Add(garbo);
+            newMap[garbo.Position] = garboCells;
+        }
+
+        // Move robots
+        foreach (var robot in map.Values
+                .SelectMany(x => x)
+                .Where(cell => cell.Kind == CellKind.Robot))
+        {
+            var newCell = robot;
+            var delta = player.Position - robot.Position;
+            delta.X = Math.Clamp(delta.X, -1, 1);
+            delta.Y = Math.Clamp(delta.Y, -1, 1);
+            newCell.Position += delta;
+            // Garbo or other robot exists
+
+            var lst = newMap.GetValueOrDefault(newCell.Position, []);
+            if (lst.Count != 0)
+            {
+                // Occupied => rewrite
+                newCell.Alive = false;
+                newCell.Kind = CellKind.Garbage;
+            }
+            newMap[newCell.Position] = [newCell];
+        }
+
+        // Move player
+        player.Alive = !newMap.ContainsKey(player.Position);
+        var newPlyCells = newMap.GetValueOrDefault(player.Position, []);
+        newPlyCells.Add(player);
+        newMap[player.Position] = newPlyCells;
+        map = newMap;
     }
 
     private Point RandomPos()
@@ -107,11 +149,32 @@ public class GameMap
         StringBuilder sb = new("(");
         foreach (var ent in map)
         {
-            sb.Append(ent.ToString());
-            sb.Append(", ");
+            sb.Append("{");
+            sb.Append(ent.Key.ToString());
+            sb.Append(": ");
+            bool first = true;
+            foreach (var cell in ent.Value)
+            {
+                if (!first)
+                {
+                    sb.Append(", ");
+                }
+                sb.Append(cell.ToString());
+            }
+            var x = ent.Value.SelectMany(x => x.ToString());
+            sb.Append("}; ");
         }
         sb.Remove(sb.Length - 2, 2);
         return sb.ToString();
+    }
+
+    public Cell GetPlayer()
+    {
+        return map.Values
+            .SelectMany(x => x)
+            .Where(cell => cell.Kind == CellKind.Player)
+            .Cast<Cell?>()
+            .FirstOrDefault() ?? throw new Exception("Player not found");
     }
 
     public void SetPlayerPosition(int x, int y)

@@ -1,6 +1,6 @@
 using Xunit;
 using Shouldly;
-using System.Linq;
+using Microsoft.Xna.Framework;
 namespace MonoRobots.Tests;
 
 public static class GameMapExtension
@@ -23,12 +23,44 @@ public static class GameMapExtension
     }
 }
 
-public class DummyTest
+public class TestGameMap
 {
+
+    private readonly MockRng rng;
+    private readonly List<Cell> cells;
+    private readonly GameMap map;
+
+    public TestGameMap()
+    {
+        rng = new MockRng();
+        cells = [];
+        map = new GameMap(32, 24, rng);
+    }
+
+    // Do map test and validate pos (key==value.pos)
+    void ValidatePos(string pfx = "Err")
+    {
+        foreach (var (posExpected, ents) in map.map)
+        {
+            foreach (var ent in ents)
+            {
+                ent.Position.ShouldBe(posExpected, $"{pfx}@{posExpected}: {map.MapDump()}");
+            }
+        }
+    }
+
+    void Step()
+    {
+        ValidatePos("Before Step");
+        map.Step();
+        ValidatePos("After Step");
+    }
+
+
+
     [Fact]
     public void TestSpawn()
     {
-        var map = new GameMap(32, 24);
         map.Reset(1);
         bool res;
         res = map.Spawn(new(2, 3), CellKind.Robot);
@@ -41,7 +73,6 @@ public class DummyTest
     [Fact]
     public void TestResetPlayerPos()
     {
-        var map = new GameMap(32, 24);
         map.Reset(1);
         var ply = map.GetPlayer();
         ply.Position.X.ShouldBe(16, "Map width/2");
@@ -52,8 +83,6 @@ public class DummyTest
     [Fact]
     public void TestStepRetainsPlayer()
     {
-        var rng = new MockRng();
-        var map = new GameMap(32, 24, rng);
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
         map.Step();
@@ -66,8 +95,6 @@ public class DummyTest
     [Fact]
     public void TestRobotSpawn()
     {
-        var rng = new MockRng();
-        var map = new GameMap(32, 24, rng);
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
         var found = map.GetAt(new(18, 12), []);
@@ -77,8 +104,6 @@ public class DummyTest
     [Fact]
     public void TestResetClears()
     {
-        var rng = new MockRng();
-        var map = new GameMap(32, 24, rng);
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
         map.map.Count.ShouldBe(2, "Player + Robot");
@@ -88,8 +113,6 @@ public class DummyTest
     [Fact]
     public void TestRobotSpawnDouble()
     {
-        var rng = new MockRng();
-        var map = new GameMap(32, 24, rng);
         rng.EnqueueInts([18, 12, 18, 12, 19, 12]);
         map.Reset(2);
         var found = map.GetAt(new(18, 12), []);
@@ -99,23 +122,26 @@ public class DummyTest
     }
 
 
+    private string Str(IEnumerable<Cell> cells)
+    {
+        return "[" + string.Join(", ", cells) + "]";
+    }
+
     [Fact]
     public void TestRobotMovesAway()
     {
-        var rng = new MockRng();
-        var map = new GameMap(32, 24, rng);
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
         map.Step();
-        var found = map.GetAt(new(18, 12), []);
-        found.ShouldBeFalse("Robot should move");
+        List<Cell> tst = [];
+        var found = map.GetAt(new(18, 12), tst);
+        found.ShouldBeFalse($"Robot should move {Str(tst)}");
         map.map.Count.ShouldBe(2, "Player + Robot");
     }
 
     [Fact]
     public void TestSetPlayerPos()
     {
-        var map = new GameMap(32, 24);
         map.Reset(1);
         map.SetPlayerPosition(2, 4);
         var plyPos = map.GetPlayer().Position;
@@ -134,8 +160,6 @@ public class DummyTest
     [InlineData(12, 21, 11, 20)]
     public void TestMoveRobot(int x0, int y0, int x1, int y1)
     {
-        var rng = new MockRng();
-        var map = new GameMap(32, 24, rng);
         rng.EnqueueInts([x0, y0]);
         map.Reset(1);
         map.SetPlayerPosition(10, 10);
@@ -161,32 +185,37 @@ public class DummyTest
     [Fact]
     public void TestMoveGarbage()
     {
-        var rng = new MockRng();
-        var map = new GameMap(32, 24, rng);
         rng.EnqueueInts([10, 12]);
         map.Reset(0);
         map.SetPlayerPosition(10, 10);
         bool ok = map.Spawn(new(4, 5), CellKind.Garbage);
         ok.ShouldBeTrue("Spawn garbo");
         map.Step();
-        ok = map.GetAt(new(4, 5), []);
-        ok.ShouldBeTrue("Garbo didn't stay");
+        ok = map.GetAt(new(4, 5), cells);
+        ok.ShouldBeTrue($"Garbo didn't stay: {map.MapDump()}");
         map.map.Count.ShouldBe(2, "Player + Garbo");
     }
 
+
+
     [Theory]
-    [InlineData(16, 11, /**/0, 1, /**/1, 1)]
+    [InlineData(16, 12, /**/0, -1, /**/1, -1)]
     public void TestRobotCollide(int cx, int cy, int dx1, int dy1, int dx2, int dy2)
     {
-        var map = new GameMap(32, 24);
         map.Reset(0);
+        var ply = map.GetPlayer();
+
+        bool isPlyAlive = ply.Position != new Point(cx, cy);
         map.Spawn(new(cx + dx1, cy + dy1), CellKind.Robot);
         map.Spawn(new(cx + dx2, cy + dy2), CellKind.Robot);
-        map.Step();
+        Step();
 
         int robots = map.FindKind(CellKind.Robot).Count;
         int garbo = map.FindKind(CellKind.Garbage).Count;
-        robots.ShouldBe(0);
+        robots.ShouldBe(0, $"{map.MapDump()}");
         garbo.ShouldBe(1);
+
+        ply = map.GetPlayer();
+        map.GetPlayer().Alive.ShouldBe(isPlyAlive, $"Ply: {map.MapDump()}");
     }
 }
