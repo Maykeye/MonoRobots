@@ -1,5 +1,6 @@
 using Xunit;
 using Shouldly;
+using Microsoft.Xna.Framework;
 namespace MonoRobots.Tests;
 
 public class TestGameMap
@@ -28,36 +29,34 @@ public class TestGameMap
         map.Reset(1);
         map.SafeStep(turns);
         var ply = map.GetPlayer();
-        ply.Position.X.ShouldBe(16, "Map width/2");
-        ply.Position.Y.ShouldBe(12, "Map height/2");
+        ply.Position.ShouldBe(new(16, 12));
         ply.Alive.ShouldBe(alive);
         map.ValidateRbtGarbo(1, 0);
     }
 
     [Fact]
-    public void TestRobotSpawn()
+    public void TestRobotSpawnAtRandomPoint()
     {
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
-        map.ValidateRobots(18, 12);
+        map.ValidateRbtGarbo([18, 12], []);
     }
 
     [Fact]
     public void TestRobotSpawnDouble()
     {
-        rng.EnqueueInts([18, 12, 18, 12, 19, 12]);
+        rng.EnqueueInts(18, 12, 18, 12, 19, 12);
         map.Reset(2);
-        map.ValidateRobots(18, 12, 19, 12);
+        map.ValidateRbtGarbo([18, 12, 19, 12], []);
     }
 
     [Fact]
-    public void TestRobotMovesAway()
+    public void TestRobotToPlayer()
     {
-        rng.EnqueueInts([18, 12]);
+        rng.EnqueueInts(18, 12);
         map.Reset(1);
         map.SafeStep();
-        map.ValidateRobots([17, 12]);
-        map.ValidateRbtGarbo(1, 0);
+        map.ValidateRbtGarbo([17, 12], []);
     }
 
     [Fact]
@@ -65,7 +64,7 @@ public class TestGameMap
     {
         map.Reset(2);
         map.SetPlayerPosition(2, 4);
-        map.ValidateMapInternalPos();
+        map.GetPlayer().Position.ShouldBe(new(2, 4));
         map.ValidateRbtGarbo(2, 0);
     }
 
@@ -84,22 +83,7 @@ public class TestGameMap
         map.Reset(1);
         map.SetPlayerPosition(10, 10);
         map.SafeStep();
-        map.map.Count.ShouldBe(2, "Player + Robot");
-
-        var plyPos = map.GetPlayer().Position;
-        plyPos.X.ShouldBe(10);
-        plyPos.Y.ShouldBe(10);
-
-        var ents = new List<Cell>();
-        bool found;
-
-        found = map.GetAt(new(x0, y0), ents);
-        found.ShouldBeFalse($"Robot should move away from {x0} {y0}");
-
-        ents = [];
-        found = map.GetAt(new(x1, y1), ents);
-        found.ShouldBeTrue($"Robot should move to {x1} {y1}; {map.MapDump()}");
-        ents.Count.ShouldBe(1);
+        map.ValidateRbtGarbo([x1, y1], []);
     }
 
     [Fact]
@@ -108,36 +92,39 @@ public class TestGameMap
         rng.EnqueueInts([10, 12]);
         map.Reset(0);
         map.SetPlayerPosition(10, 10);
-        bool ok = map.Spawn(new(4, 5), CellKind.Garbage);
-        ok.ShouldBeTrue("Spawn garbo");
+        map.Spawn(new(4, 5), CellKind.Garbage).ShouldBeTrue("Spawn garbo");
         map.SafeStep();
-        ok = map.GetAt(new(4, 5), cells);
-        ok.ShouldBeTrue($"Garbo didn't stay: {map.MapDump()}");
+        map.GetAt(new(4, 5), cells).ShouldBeTrue($"Garbo didn't stay: {map.MapDump()}");
         map.map.Count.ShouldBe(2, "Player + Garbo");
     }
 
     [Theory]
-    [InlineData(Pt.HOME, Pt.N, Pt.NE)]
-    [InlineData(Pt.HOME, Pt.N, Pt.NW)]
-    [InlineData(Pt.HOME, Pt.S, Pt.SW)]
-    [InlineData(Pt.HOME, Pt.S, Pt.SE)]
-    [InlineData(Pt.HOME, Pt.E, Pt.NE)]
-    [InlineData(Pt.HOME, Pt.E, Pt.SE)]
-    [InlineData(Pt.HOME, Pt.W, Pt.SW)]
-    [InlineData(Pt.HOME, Pt.W, Pt.NW)]
-    [InlineData(Pt.HOME, Pt.NW, Pt.NE)]
-    [InlineData(Pt.HOME, Pt.SW, Pt.SE)]
-    [InlineData(Pt.HOME, Pt.NE, Pt.SE)]
-    [InlineData(Pt.HOME, Pt.NW, Pt.SW)]
-    public void TestRobotCollide(Pt cur, Pt r1, Pt r2)
+    [MemberData(nameof(Utils.COMPASS_ADJACENT), MemberType = typeof(Utils))]
+    public void TestRobotCollide(Pt r1, Pt r2)
     {
         map.Reset(0);
         var ply = map.GetPlayer();
-        bool isPlyAlive = ply.Position != cur.Point();
-        map.Spawn(r1.Add(cur), CellKind.Robot);
-        map.Spawn(r2.Add(cur), CellKind.Robot);
+        bool isPlyAlive = ply.Position != Pt.HOME.Point();
+        map.Spawn(r1.Add(Pt.HOME), CellKind.Robot);
+        map.Spawn(r2.Add(Pt.HOME), CellKind.Robot);
         map.SafeStep();
         map.ValidateRbtGarbo(0, 1);
         map.GetPlayer().Alive.ShouldBe(isPlyAlive, $"Ply: {map.MapDump()}");
+    }
+
+    [Theory]
+    [MemberData(nameof(Utils.COMPASS_8), MemberType = typeof(Utils))]
+    public void TestRobotCollideGarbage(Pt deltaKind)
+    {
+        var delta = deltaKind.Point();
+        map.Reset(0);
+        map.Spawn(new(10, 12), CellKind.Garbage);
+        map.SetPlayerPosition(10 + delta.X, 12 + delta.Y); // ply behind garbo
+        var robotPos = new Point(10 - delta.X, 12 - delta.Y); //  rbt on opposite side
+        map.Spawn(robotPos, CellKind.Robot);
+        map.ValidateRbtGarbo([robotPos.X, robotPos.Y], [10, 12]);
+        map.SafeStep();
+        map.ValidateRbtGarbo([], [10, 12]);
+        map.GetPlayer().Alive.ShouldBeTrue();
     }
 }

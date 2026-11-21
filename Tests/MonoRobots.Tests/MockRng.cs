@@ -29,7 +29,7 @@ public class MockRng : Random
         return base.Next(maxValue);
     }
 
-    public void EnqueueInts(IEnumerable<int> xs)
+    public void EnqueueInts(params IEnumerable<int> xs)
     {
         foreach (var x in xs)
         {
