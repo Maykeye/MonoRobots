@@ -85,7 +85,7 @@ public class TestGameMap
     {
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
-        map.Step();
+        Step();
         var ply = map.GetPlayer();
         ply.Position.X.ShouldBe(16, "Map width/2");
         ply.Position.Y.ShouldBe(12, "Map height/2");
@@ -132,7 +132,7 @@ public class TestGameMap
     {
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
-        map.Step();
+        Step();
         List<Cell> tst = [];
         var found = map.GetAt(new(18, 12), tst);
         found.ShouldBeFalse($"Robot should move {Str(tst)}");
@@ -163,7 +163,7 @@ public class TestGameMap
         rng.EnqueueInts([x0, y0]);
         map.Reset(1);
         map.SetPlayerPosition(10, 10);
-        map.Step();
+        Step();
         map.map.Count.ShouldBe(2, "Player + Robot");
 
         var plyPos = map.GetPlayer().Position;
@@ -190,7 +190,7 @@ public class TestGameMap
         map.SetPlayerPosition(10, 10);
         bool ok = map.Spawn(new(4, 5), CellKind.Garbage);
         ok.ShouldBeTrue("Spawn garbo");
-        map.Step();
+        Step();
         ok = map.GetAt(new(4, 5), cells);
         ok.ShouldBeTrue($"Garbo didn't stay: {map.MapDump()}");
         map.map.Count.ShouldBe(2, "Player + Garbo");
@@ -215,7 +215,6 @@ public class TestGameMap
         robots.ShouldBe(0, $"{map.MapDump()}");
         garbo.ShouldBe(1);
 
-        ply = map.GetPlayer();
         map.GetPlayer().Alive.ShouldBe(isPlyAlive, $"Ply: {map.MapDump()}");
     }
 }
