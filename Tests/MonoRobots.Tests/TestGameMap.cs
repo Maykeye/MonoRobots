@@ -1,5 +1,6 @@
 using Xunit;
 using Shouldly;
+using static MonoRobots.Tests.Utils;
 namespace MonoRobots.Tests;
 
 public class TestGameMap
@@ -177,31 +178,27 @@ public class TestGameMap
 
     [Theory]
     [InlineData(Pt.HOME, Pt.N, Pt.NE)]
+    [InlineData(Pt.HOME, Pt.N, Pt.NW)]
+    [InlineData(Pt.HOME, Pt.S, Pt.SW)]
     [InlineData(Pt.HOME, Pt.S, Pt.SE)]
+    [InlineData(Pt.HOME, Pt.E, Pt.NE)]
     [InlineData(Pt.HOME, Pt.E, Pt.SE)]
     [InlineData(Pt.HOME, Pt.W, Pt.SW)]
+    [InlineData(Pt.HOME, Pt.W, Pt.NW)]
     [InlineData(Pt.HOME, Pt.NW, Pt.NE)]
     [InlineData(Pt.HOME, Pt.SW, Pt.SE)]
-    [InlineData(Pt.HOME, Pt.NW, Pt.SW)]
     [InlineData(Pt.HOME, Pt.NE, Pt.SE)]
-    public void TestRobotCollide(Pt curd, Pt r1d, Pt r2d)
+    [InlineData(Pt.HOME, Pt.NW, Pt.SW)]
+    public void TestRobotCollide(Pt cur, Pt r1, Pt r2)
     {
-        var cur = Utils.Pt2Point(curd);
-        var r1 = cur + Utils.Pt2Point(r1d);
-        var r2 = cur + Utils.Pt2Point(r2d);
         map.Reset(0);
         var ply = map.GetPlayer();
-
-        bool isPlyAlive = ply.Position != cur;
-        map.Spawn(r1, CellKind.Robot);
-        map.Spawn(r2, CellKind.Robot);
+        bool isPlyAlive = ply.Position != cur.Point();
+        map.Spawn(r1.Add(cur), CellKind.Robot);
+        map.Spawn(r2.Add(cur), CellKind.Robot);
         Step();
-
-        int robots = map.FindKind(CellKind.Robot).Count;
-        robots.ShouldBe(0, $"{map.MapDump()}");
-        int garbo = map.FindKind(CellKind.Garbage).Count;
-        garbo.ShouldBe(1);
-
+        map.Count(CellKind.Robot).ShouldBe(0, $"Rbt: {map.MapDump()}");
+        map.Count(CellKind.Garbage).ShouldBe(1);
         map.GetPlayer().Alive.ShouldBe(isPlyAlive, $"Ply: {map.MapDump()}");
     }
 }

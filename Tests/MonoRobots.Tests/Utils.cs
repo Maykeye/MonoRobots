@@ -3,6 +3,14 @@ using Microsoft.Xna.Framework;
 
 namespace MonoRobots.Tests;
 
+public enum Pt
+{
+    HOME,
+    N, W, S, E,
+    NW, NE, SE, SW
+}
+
+
 public static class GameMapExtension
 {
     public static Cell GetPlayer(this GameMap gameMap)
@@ -21,9 +29,25 @@ public static class GameMapExtension
 
         return foundCells;
     }
+
+    public static int Count(this GameMap gameMap, CellKind kind)
+    {
+        return gameMap.FindKind(kind).Count;
+    }
+}
+public static class PtExtension
+{
+    public static Point Point(this Pt pt)
+    {
+        return Utils.Pt2Point(pt);
+    }
+    public static Point Add(this Pt pt, Pt otherAsDelta)
+    {
+        return Utils.Pt2Point(pt) + otherAsDelta.Point();
+    }
 }
 
-public struct Utils
+public static class Utils
 {
     public static Point Pt2Point(Pt p) => p switch
     {
@@ -40,12 +64,5 @@ public struct Utils
     };
 
 
-}
-
-public enum Pt
-{
-    HOME,
-    N, W, S, E,
-    NW, NE, SE, SW
 }
 
