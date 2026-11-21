@@ -37,7 +37,7 @@ public struct Cell
 public class GameMap
 {
     internal Dictionary<Point, List<Cell>> map;
-    Point size;
+    internal Point size;
     readonly Random rng;
 
     public GameMap(int width = 32, int height = 32, Random rng = null)

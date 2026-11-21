@@ -39,7 +39,7 @@ public static class GameMapExtension
             var xy = new Point(xys[i], xys[i + 1]);
             var entCount = gameMap.map.GetValueOrDefault(xy, [])
                 .Count(cell => cell.Kind == kind);
-            entCount.ShouldBe(1, $"At {xy} expected 1 {kind}, not {entCount}");
+            entCount.ShouldBe(1, $"At {xy} expected 1 {kind}, not {entCount} in {gameMap.MapDump()}");
         }
         gameMap.Count(kind).ShouldBe(xys.Length / 2, $"{gameMap.MapDump()}");
     }

@@ -9,12 +9,14 @@ public class TestGameMap
     private readonly MockRng rng;
     private readonly List<Cell> cells;
     private readonly GameMap map;
+    Point home_point;
 
     public TestGameMap()
     {
         rng = new MockRng();
         cells = [];
         map = new GameMap(32, 24, rng);
+        home_point = map.size / 2;
     }
 
     [Theory]
@@ -68,26 +70,8 @@ public class TestGameMap
         map.ValidateRbtGarbo(2, 0);
     }
 
-    [Theory]
-    [InlineData(10, 8, 10, 9)]
-    [InlineData(10, 12, 10, 11)]
-    [InlineData(0, 10, 1, 10)]
-    [InlineData(12, 10, 11, 10)]
-    [InlineData(9, 1, 10, 2)]
-    [InlineData(12, 1, 11, 2)]
-    [InlineData(9, 21, 10, 20)]
-    [InlineData(12, 21, 11, 20)]
-    public void TestMoveRobot(int x0, int y0, int x1, int y1)
-    {
-        rng.EnqueueInts([x0, y0]);
-        map.Reset(1);
-        map.SetPlayerPosition(10, 10);
-        map.SafeStep();
-        map.ValidateRbtGarbo([x1, y1], []);
-    }
-
     [Fact]
-    public void TestMoveGarbage()
+    public void TestGarbageNoMove()
     {
         rng.EnqueueInts([10, 12]);
         map.Reset(0);
@@ -127,4 +111,67 @@ public class TestGameMap
         map.ValidateRbtGarbo([], [10, 12]);
         map.GetPlayer().Alive.ShouldBeTrue();
     }
+
+
+    [Theory]
+    [InlineData(10, 8, 10, 9)]
+    [InlineData(10, 12, 10, 11)]
+    [InlineData(0, 10, 1, 10)]
+    [InlineData(12, 10, 11, 10)]
+    [InlineData(9, 1, 10, 2)]
+    [InlineData(12, 1, 11, 2)]
+    [InlineData(9, 21, 10, 20)]
+    [InlineData(12, 21, 11, 20)]
+    public void TestOneRobotMoves0(int x0, int y0, int x1, int y1)
+    {
+        rng.EnqueueInts([x0, y0]);
+        map.Reset(1);
+        map.SetPlayerPosition(10, 10);
+        map.SafeStep();
+        map.ValidateRbtGarbo([x1, y1], []);
+    }
+
+    [Theory]
+    [MemberData(nameof(Utils.COMPASS_8), MemberType = typeof(Utils))]
+    public void TestOneRobotMovesSafely(Pt deltaKind)
+    {
+        var delta = deltaKind.Point();
+        var robotSpawn = home_point + delta * 2; // E.g. @.R.
+        rng.EnqueueInts(robotSpawn.X, robotSpawn.Y);
+        map.Reset(1);
+        map.SafeStep();
+        var dst = home_point + delta; // E.g. @R..
+        map.ValidateRbtGarbo([dst.X, dst.Y], []);
+    }
+
+
+    public static TheoryData<Pt, bool> COMPASS_8_BOOL()
+    {
+        var data = new TheoryData<Pt, bool>();
+        foreach (var pt in Utils.COMPASS_8)
+        {
+            data.Add(pt, true);
+            data.Add(pt, false);
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(COMPASS_8_BOOL), MemberType = typeof(TestGameMap))]
+    public void TestTwoRobotsMoveSafely(Pt deltaKind, bool reverseSpawn)
+    {
+        var spawn1 = home_point + deltaKind.Point() * 2; // E.g. @.Rr where r not spawn  yet
+        var spawn2 = home_point + deltaKind.Point() * 3; // E.g. @.rR
+        if (reverseSpawn)
+            (spawn1, spawn2) = (spawn2, spawn1);
+
+        var delta = deltaKind.Point();
+        rng.EnqueueInts(spawn1, spawn2);
+        map.Reset(2);
+        map.SafeStep();
+        var dst1 = home_point + delta * 1; // E.g. @RR.
+        var dst2 = home_point + delta * 2; // 
+        map.ValidateRbtGarbo([dst1.X, dst1.Y, dst2.X, dst2.Y], []);
+    }
 }
+

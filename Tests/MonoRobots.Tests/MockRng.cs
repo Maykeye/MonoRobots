@@ -1,3 +1,5 @@
+using Microsoft.Xna.Framework;
+
 namespace MonoRobots.Tests;
 
 public class MockRng : Random
@@ -29,6 +31,14 @@ public class MockRng : Random
         return base.Next(maxValue);
     }
 
+    public void EnqueueInts(params IEnumerable<Point> ps)
+    {
+        foreach (var p in ps)
+        {
+            Ints.Enqueue(p.X);
+            Ints.Enqueue(p.Y);
+        }
+    }
     public void EnqueueInts(params IEnumerable<int> xs)
     {
         foreach (var x in xs)
