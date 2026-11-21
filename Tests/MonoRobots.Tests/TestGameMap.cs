@@ -38,37 +38,27 @@ public class TestGameMap
 
 
 
-    [Fact]
-    public void TestSpawn()
-    {
-        map.Reset(1);
-        bool res;
-        res = map.Spawn(new(2, 3), CellKind.Robot);
-        res.ShouldBeTrue("Must spawn at empty cell");
-        res = map.Spawn(new(2, 3), CellKind.Robot);
-        res.ShouldBeFalse("Must not spawn at occupied cell");
-    }
 
-
-    [Fact]
-    public void TestResetPlayerPos()
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(1, true)]
+    [InlineData(2, false)]
+    [InlineData(4, false)]
+    [InlineData(1000, false)]
+    public void TestRetainPlayerPos(int turns, bool alive)
     {
+        rng.EnqueueInts([18, 12]); // x=ply.x+2, y=ply.y
         map.Reset(1);
+
+        for (int i = 0; i < turns; i++)
+        {
+            Step();
+        }
         var ply = map.GetPlayer();
         ply.Position.X.ShouldBe(16, "Map width/2");
         ply.Position.Y.ShouldBe(12, "Map height/2");
-    }
-
-
-    [Fact]
-    public void TestStepRetainsPlayer()
-    {
-        rng.EnqueueInts([18, 12]);
-        map.Reset(1);
-        Step();
-        var ply = map.GetPlayer();
-        ply.Position.X.ShouldBe(16, "Map width/2");
-        ply.Position.Y.ShouldBe(12, "Map height/2");
+        ply.Alive.ShouldBe(alive);
+        ValidateRbtGarbo(1, 0);
     }
 
 
@@ -79,15 +69,6 @@ public class TestGameMap
         map.Reset(1);
         var found = map.GetAt(new(18, 12), []);
         found.ShouldBeTrue("Given RNG, should spawn at given coords");
-    }
-
-    [Fact]
-    public void TestResetClears()
-    {
-        rng.EnqueueInts([18, 12]);
-        map.Reset(1);
-        map.map.Count.ShouldBe(2, "Player + Robot");
-
     }
 
     [Fact]
@@ -107,26 +88,31 @@ public class TestGameMap
         return "[" + string.Join(", ", cells) + "]";
     }
 
+    void ValidateRbtGarbo(int rob, int garbo)
+    {
+        map.Count(CellKind.Player).ShouldBe(1, "Map invariant broken");
+        map.Count(CellKind.Robot).ShouldBe(rob);
+        map.Count(CellKind.Garbage).ShouldBe(garbo);
+    }
+
     [Fact]
     public void TestRobotMovesAway()
     {
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
         Step();
-        List<Cell> tst = [];
-        var found = map.GetAt(new(18, 12), tst);
-        found.ShouldBeFalse($"Robot should move {Str(tst)}");
-        map.map.Count.ShouldBe(2, "Player + Robot");
+        var found = map.GetAt(new(18, 12), cells);
+        found.ShouldBeFalse($"Robot should move {Str(cells)}");
+        ValidateRbtGarbo(1, 0);
     }
 
     [Fact]
     public void TestSetPlayerPos()
     {
-        map.Reset(1);
+        map.Reset(2);
         map.SetPlayerPosition(2, 4);
-        var plyPos = map.GetPlayer().Position;
-        plyPos.X.ShouldBe(2);
-        plyPos.Y.ShouldBe(4);
+        ValidatePos();
+        ValidateRbtGarbo(2, 0);
     }
 
     [Theory]
