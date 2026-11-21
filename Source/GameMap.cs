@@ -66,6 +66,9 @@ public class GameMap
     {
         var newMap = new List<Cell>(map.Count);
         var playerPos = GetPlayer().Position;
+        var occupied = new Dictionary<Point, int>{
+            {playerPos, 1}
+        };
 
         foreach (var cell in map)
         {
@@ -77,6 +80,9 @@ public class GameMap
                 delta.Y = Math.Sign(delta.Y);
                 newCell.Position += delta;
             }
+
+            int old = occupied.GetValueOrDefault(newCell.Position, 0);
+            occupied.Add(newCell.Position, old + 1);
             newMap.Add(newCell);
         }
         map = newMap;

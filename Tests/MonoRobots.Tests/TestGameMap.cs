@@ -2,45 +2,6 @@ using Xunit;
 using Shouldly;
 namespace MonoRobots.Tests;
 
-public class MockRng : Random
-{
-    public Queue<int> Ints = [];
-
-    /// <summary>
-    /// (Supposed to) return in minValue..maxValue
-    /// </summary>
-    public override int Next(int minValue, int maxValue)
-    {
-        if (Ints.TryDequeue(out int res))
-        {
-            return res;
-        }
-
-        return base.Next(minValue, maxValue);
-    }
-    /// <summary>
-    /// (Supposed to) return in 0..maxValue
-    /// </summary>
-    public override int Next(int maxValue)
-    {
-        if (Ints.TryDequeue(out int res))
-        {
-            return res;
-        }
-
-        return base.Next(maxValue);
-    }
-
-    public void EnqueueInts(IEnumerable<int> xs)
-    {
-        foreach (var x in xs)
-        {
-            Ints.Enqueue(x);
-        }
-    }
-
-}
-
 public class DummyTest
 {
     [Fact]
@@ -190,5 +151,21 @@ public class DummyTest
         ok = map.GetAt(new(4, 5), []);
         ok.ShouldBeTrue("Garbo didn't stay");
         map.map.Count.ShouldBe(3, "Player + Robot + Garbo");
+    }
+
+    [Theory]
+    [InlineData(16, 11, /**/0, 1, /**/1, 1)]
+    public void TestRobotCollide(int cx, int cy, int dx1, int dy1, int dx2, int dy2)
+    {
+        var map = new GameMap(32, 24);
+        map.Reset(0);
+        map.Spawn(new(cx + dx1, cy + dy1), CellKind.Robot);
+        map.Spawn(new(cx + dx2, cy + dy2), CellKind.Robot);
+        map.Step();
+
+        int robots = map.map.Count(ent => ent.Kind == CellKind.Robot);
+        int garbo = map.map.Count(ent => ent.Kind == CellKind.Garbage);
+        robots.ShouldBe(0);
+        garbo.ShouldBe(1);
     }
 }
