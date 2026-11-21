@@ -1,27 +1,6 @@
 using Xunit;
 using Shouldly;
-using Microsoft.Xna.Framework;
 namespace MonoRobots.Tests;
-
-public static class GameMapExtension
-{
-    public static Cell GetPlayer(this GameMap gameMap)
-    {
-        var plys = gameMap.FindKind(CellKind.Player);
-        plys.Count.ShouldBe(1, "Exactly one player should exist");
-        return plys[0];
-    }
-
-    public static List<Cell> FindKind(this GameMap gameMap, CellKind kind)
-    {
-        var foundCells = gameMap.map.Values
-            .SelectMany(val => val) // flatten [[a,b,c], [d,e,f]] => [a,b,c,d,e,f]
-            .Where(cell => cell.Kind == kind)
-            .ToList();
-
-        return foundCells;
-    }
-}
 
 public class TestGameMap
 {
@@ -196,23 +175,31 @@ public class TestGameMap
         map.map.Count.ShouldBe(2, "Player + Garbo");
     }
 
-
-
     [Theory]
-    [InlineData(16, 12, /**/0, -1, /**/1, -1)]
-    public void TestRobotCollide(int cx, int cy, int dx1, int dy1, int dx2, int dy2)
+    [InlineData(Pt.HOME, Pt.N, Pt.NE)]
+    [InlineData(Pt.HOME, Pt.S, Pt.SE)]
+    [InlineData(Pt.HOME, Pt.E, Pt.SE)]
+    [InlineData(Pt.HOME, Pt.W, Pt.SW)]
+    [InlineData(Pt.HOME, Pt.NW, Pt.NE)]
+    [InlineData(Pt.HOME, Pt.SW, Pt.SE)]
+    [InlineData(Pt.HOME, Pt.NW, Pt.SW)]
+    [InlineData(Pt.HOME, Pt.NE, Pt.SE)]
+    public void TestRobotCollide(Pt curd, Pt r1d, Pt r2d)
     {
+        var cur = Utils.Pt2Point(curd);
+        var r1 = cur + Utils.Pt2Point(r1d);
+        var r2 = cur + Utils.Pt2Point(r2d);
         map.Reset(0);
         var ply = map.GetPlayer();
 
-        bool isPlyAlive = ply.Position != new Point(cx, cy);
-        map.Spawn(new(cx + dx1, cy + dy1), CellKind.Robot);
-        map.Spawn(new(cx + dx2, cy + dy2), CellKind.Robot);
+        bool isPlyAlive = ply.Position != cur;
+        map.Spawn(r1, CellKind.Robot);
+        map.Spawn(r2, CellKind.Robot);
         Step();
 
         int robots = map.FindKind(CellKind.Robot).Count;
-        int garbo = map.FindKind(CellKind.Garbage).Count;
         robots.ShouldBe(0, $"{map.MapDump()}");
+        int garbo = map.FindKind(CellKind.Garbage).Count;
         garbo.ShouldBe(1);
 
         map.GetPlayer().Alive.ShouldBe(isPlyAlive, $"Ply: {map.MapDump()}");
