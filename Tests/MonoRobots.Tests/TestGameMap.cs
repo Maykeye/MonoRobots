@@ -1,6 +1,6 @@
 using Xunit;
 using Shouldly;
-using static MonoRobots.Tests.Utils;
+using Microsoft.Xna.Framework;
 namespace MonoRobots.Tests;
 
 public class TestGameMap
@@ -17,8 +17,21 @@ public class TestGameMap
         map = new GameMap(32, 24, rng);
     }
 
+    void Step()
+    {
+        ValidateMapInternalPos("Before Step");
+        map.Step();
+        ValidateMapInternalPos("After Step");
+    }
+
+
+    private string Str(IEnumerable<Cell> cells)
+    {
+        return "[" + string.Join(", ", cells) + "]";
+    }
+
     // Do map test and validate pos (key==value.pos)
-    void ValidatePos(string pfx = "Err")
+    void ValidateMapInternalPos(string pfx = "Err")
     {
         foreach (var (posExpected, ents) in map.map)
         {
@@ -29,15 +42,25 @@ public class TestGameMap
         }
     }
 
-    void Step()
+    void ValidateRbtGarbo(int rob, int garbo)
     {
-        ValidatePos("Before Step");
-        map.Step();
-        ValidatePos("After Step");
+        map.Count(CellKind.Player).ShouldBe(1, "Map invariant broken");
+        map.Count(CellKind.Robot).ShouldBe(rob);
+        map.Count(CellKind.Garbage).ShouldBe(garbo);
     }
 
-
-
+    void ValidateRobots(params int[] xys)
+    {
+        (xys.Length % 2).ShouldBe(0, "Internal error: pass XYs pairs");
+        for (int i = 0; i < xys.Length; i += 2)
+        {
+            var xy = new Point(xys[i], xys[i + 1]);
+            var robots = map.map.GetValueOrDefault(xy, [])
+                .Count(cell => cell.Kind == CellKind.Robot);
+            robots.ShouldBe(1, $"At {xy} expected 1 robot, not {robots}");
+        }
+        map.Count(CellKind.Robot).ShouldBe(xys.Length / 2, $"{map.MapDump()}");
+    }
 
     [Theory]
     [InlineData(0, true)]
@@ -61,14 +84,12 @@ public class TestGameMap
         ValidateRbtGarbo(1, 0);
     }
 
-
     [Fact]
     public void TestRobotSpawn()
     {
         rng.EnqueueInts([18, 12]);
         map.Reset(1);
-        var found = map.GetAt(new(18, 12), []);
-        found.ShouldBeTrue("Given RNG, should spawn at given coords");
+        ValidateRobots(18, 12);
     }
 
     [Fact]
@@ -76,23 +97,7 @@ public class TestGameMap
     {
         rng.EnqueueInts([18, 12, 18, 12, 19, 12]);
         map.Reset(2);
-        var found = map.GetAt(new(18, 12), []);
-        found.ShouldBeTrue("Given RNG, should spawn at given coords");
-        found = map.GetAt(new(19, 12), []);
-        found.ShouldBeTrue("Given RNG, should respawn at given coords");
-    }
-
-
-    private string Str(IEnumerable<Cell> cells)
-    {
-        return "[" + string.Join(", ", cells) + "]";
-    }
-
-    void ValidateRbtGarbo(int rob, int garbo)
-    {
-        map.Count(CellKind.Player).ShouldBe(1, "Map invariant broken");
-        map.Count(CellKind.Robot).ShouldBe(rob);
-        map.Count(CellKind.Garbage).ShouldBe(garbo);
+        ValidateRobots(18, 12, 19, 12);
     }
 
     [Fact]
@@ -111,7 +116,7 @@ public class TestGameMap
     {
         map.Reset(2);
         map.SetPlayerPosition(2, 4);
-        ValidatePos();
+        ValidateMapInternalPos();
         ValidateRbtGarbo(2, 0);
     }
 
