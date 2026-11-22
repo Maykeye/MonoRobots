@@ -7,9 +7,9 @@ namespace MonoRobots;
 
 public class Game1 : Game
 {
-    private GraphicsDeviceManager graphics;
+    internal GraphicsDeviceManager graphics;
     private SpriteBatch spriteBatch;
-    private GameMap gameMap;
+    private readonly GameMap gameMap;
 
     Texture2D groundTexture;
     Texture2D robotTexture;
@@ -46,14 +46,61 @@ public class Game1 : Game
         playerTexture = Texture2D.FromFile(GraphicsDevice, "Assets/Player.png");
     }
 
+    private KeyboardState curKbd;
+    private KeyboardState lastKbd;
+
+    private bool IsPressed(Keys key)
+    {
+        if (lastKbd.IsKeyDown(key))
+            return false;
+        return curKbd.IsKeyDown(key);
+    }
+
     protected override void Update(GameTime gameTime)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+        curKbd = Keyboard.GetState();
+
+        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || IsPressed(Keys.Escape))
             Exit();
+
+        // Movement
+        PlayerTurn turn = null;
+        // TODO: cfg?
+        if (IsPressed(Keys.Down)) turn = new PlayerTurn.Move(new Point(0, 1));
+        if (IsPressed(Keys.Up)) turn = new PlayerTurn.Move(new Point(0, -1));
+        if (IsPressed(Keys.Left)) turn = new PlayerTurn.Move(new Point(-1, 0));
+        if (IsPressed(Keys.Right)) turn = new PlayerTurn.Move(new Point(1, 0));
+
+
+        if (IsPressed(Keys.NumPad8)) turn = new PlayerTurn.Move(new Point(0, -1));
+        if (IsPressed(Keys.NumPad2)) turn = new PlayerTurn.Move(new Point(0, 1));
+        if (IsPressed(Keys.NumPad4)) turn = new PlayerTurn.Move(new Point(-1, 0));
+        if (IsPressed(Keys.NumPad6)) turn = new PlayerTurn.Move(new Point(1, 0));
+
+        if (IsPressed(Keys.NumPad1)) turn = new PlayerTurn.Move(new Point(-1, 1));
+        if (IsPressed(Keys.NumPad3)) turn = new PlayerTurn.Move(new Point(1, 1));
+        if (IsPressed(Keys.NumPad7)) turn = new PlayerTurn.Move(new Point(-1, -1));
+        if (IsPressed(Keys.NumPad9)) turn = new PlayerTurn.Move(new Point(1, -1));
+
+        if (IsPressed(Keys.Space)) turn = new PlayerTurn.Teleport();
+        if (IsPressed(Keys.OemPeriod)) turn = new PlayerTurn.DoNothing();
+        if (IsPressed(Keys.NumPad5)) turn = new PlayerTurn.DoNothing();
+        if (IsPressed(Keys.F12))
+        {
+            ResetMap();
+            turn = null;
+        }
+        if (turn is not null)
+        {
+            gameMap.Step(turn);
+        }
+
 
         // TODO: Add your update logic here
 
         base.Update(gameTime);
+
+        lastKbd = curKbd;
     }
 
 
@@ -89,14 +136,14 @@ public class Game1 : Game
         }
     }
 
-    private void DrawRobots()
+    private void DrawEnts(CellKind kind, Texture2D texture)
     {
         var tileSz = ViewportTileSize;
-        foreach (var robot in gameMap.FindKind(CellKind.Robot))
+        foreach (var robot in gameMap.FindKind(kind))
         {
             var tilePos = ViewportTilePos(robot.Position.X, robot.Position.Y);
             var tileRect = new Rectangle((int)tilePos.X, (int)tilePos.Y, (int)tileSz.X, (int)tileSz.Y);
-            spriteBatch.Draw(robotTexture, tileRect, Color.White);
+            spriteBatch.Draw(texture, tileRect, Color.White);
         }
     }
 
@@ -133,7 +180,8 @@ public class Game1 : Game
         // In viewport pixels
         spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         DrawGround();
-        DrawRobots();
+        DrawEnts(CellKind.Garbage, garboTexture);
+        DrawEnts(CellKind.Robot, robotTexture);
         DrawPlayer();
         spriteBatch.End();
 
