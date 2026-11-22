@@ -22,13 +22,14 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Source\**\*.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <UpToDateCheckInput Include="..\..\Content\Assets\**\*" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.6.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Source\MonoRobots.Engine\MonoRobots.Engine.csproj" />
+    <ProjectReference Include="..\..\Source\MonoRobots.Render\MonoRobots.Render.csproj" />
   </ItemGroup>
   <Import Project="..\..\Content\BuildContent.targets" />
   <!-- Generates Info.plist for a hand-packaged macOS .app bundle, when building for macOS. -->

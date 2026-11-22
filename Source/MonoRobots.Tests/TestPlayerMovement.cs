@@ -1,6 +1,7 @@
 using Xunit;
 using Shouldly;
 using Microsoft.Xna.Framework;
+using MonoRobots.Engine;
 namespace MonoRobots.Tests;
 
 public class TestPlayerMovement

@@ -2,8 +2,8 @@ stdout.txt
 *.xnb
 Content/bin/
 Content/obj/
-Tests/*/bin
-Tests/*/obj
+Source/*/bin/
+Source/*/obj/
 Platforms/*/bin/
 Platforms/*/obj/
 .vscode

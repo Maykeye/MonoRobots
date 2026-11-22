@@ -5,7 +5,8 @@ using Microsoft.Xna.Framework;
 using System.Text;
 using System.Linq;
 [assembly: InternalsVisibleTo("MonoRobots.Tests")]
-namespace MonoRobots;
+
+namespace MonoRobots.Engine;
 
 public abstract record PlayerTurn
 {
@@ -46,8 +47,8 @@ public struct Cell
 public class GameMap
 {
     internal Dictionary<Point, List<Cell>> map;
-    internal Point Size;
     readonly Random rng;
+    public Point Size;
 
     public GameMap(int width = 32, int height = 32, Random rng = null)
     {

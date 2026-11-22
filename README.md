@@ -8,17 +8,19 @@ It contains no game code beyond a minimal `Game1` class and no content - a blank
 
 | Folder | Purpose |
 | --- | --- |
-| `Source/` | Shared game code, compiled into every platform project. Start in `Game1.cs`. |
+| `Source/MonoRobots.Engine/` | Game logic: map, turns, rules (`GameMap.cs`). Uses MonoGame value types (`Point`) only — renders nothing, so it is headless-testable. |
+| `Source/MonoRobots.Render/` | MonoGame presentation: `Game1.cs`, input, sprite drawing. The only place allowed to render. |
+| `Source/MonoRobots.Tests/` | xUnit tests. Reference `MonoRobots.Engine` only, which keeps the engine/presentation boundary enforced. |
 | `Resources/` | Your game's identity, icons and platform art, referenced by every platform. One copy of each asset, no duplicates per platform. |
 | `Content/` | The Content Builder project. Put your raw assets under `Content/Assets/` and register them in `Content/Builder/Builder.cs`. Content is built automatically as part of each platform build. |
-| `Platforms/DesktopGL/` | Cross-platform OpenGL desktop (Windows, Linux, macOS). |
+| `Platforms/DesktopGL/` | Cross-platform OpenGL desktop (Windows, Linux, macOS). Platform entry point (`Program.cs`) and platform configuration. |
 | `Platforms/DesktopVK/` | Cross-platform Vulkan desktop (Windows, Linux, macOS). |
 | `Platforms/WindowsDX/` | Windows DirectX 11 desktop. |
 | `Platforms/WindowsDX12/` | Windows DirectX 12 desktop. |
 | `Platforms/Android/` | Android mobile (`net10.0-android`). |
 | `Platforms/iOS/` | iOS mobile (`net10.0-ios`, requires a Mac to build/deploy). |
 
-Each folder under `Platforms/` contains only its entry point and platform-specific configuration; all game logic lives once in `Source/`.
+Each folder under `Platforms/` contains only its entry point and platform-specific configuration. Game logic lives once in `Source/MonoRobots.Engine`; MonoGame-facing code lives in `Source/MonoRobots.Render`. Dependencies point one way: `Render → Engine`, `Tests → Engine`, platform heads → `Engine + Render` (never Tests).
 
 ## Naming your game
 

@@ -2,6 +2,7 @@ using Shouldly;
 using Xunit;
 using Microsoft.Xna.Framework;
 
+using MonoRobots.Engine;
 namespace MonoRobots.Tests;
 
 public enum Pt

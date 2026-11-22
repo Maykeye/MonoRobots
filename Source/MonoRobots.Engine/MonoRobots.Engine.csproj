@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>MonoRobots.Engine</RootNamespace>
+  </PropertyGroup>
+
+  <!-- The engine may use MonoGame value types (Point) but renders nothing:
+       no SpriteBatch / GraphicsDevice / textures here. Rendering lives in MonoRobots.Render.
+       Tests reference this project alone, which enforces the boundary. -->
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.6.1" />
+  </ItemGroup>
+
+</Project>

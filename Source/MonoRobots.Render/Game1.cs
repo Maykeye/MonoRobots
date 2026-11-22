@@ -2,8 +2,8 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-
-namespace MonoRobots;
+using MonoRobots.Engine;
+namespace MonoRobots.Render;
 
 public class Game1 : Game
 {

@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Xunit.Internal;
 
+using MonoRobots.Engine;
 namespace MonoRobots.Tests;
 
 public class MockRng : Random

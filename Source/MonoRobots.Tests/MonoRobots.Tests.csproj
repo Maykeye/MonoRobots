@@ -12,8 +12,9 @@
     <PackageReference Include="xunit.v3" Version="4.0.3" />
   </ItemGroup>
 
+  <!-- Engine only. If a test ever needs MonoGame or Game1, the engine boundary has leaked. -->
   <ItemGroup>
-    <ProjectReference Include="..\..\Platforms\DesktopGL\MonoRobots.DesktopGL.csproj" />
+    <ProjectReference Include="..\MonoRobots.Engine\MonoRobots.Engine.csproj" />
   </ItemGroup>
 
 </Project>
