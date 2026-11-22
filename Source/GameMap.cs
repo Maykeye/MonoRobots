@@ -7,10 +7,19 @@ using System.Linq;
 [assembly: InternalsVisibleTo("MonoRobots.Tests")]
 namespace MonoRobots;
 
-public abstract record PlayerTurn;
-public record Player_DoNothing : PlayerTurn;
-public record Player_Move(Point Delta) : PlayerTurn;
-public record Player_Teleport() : PlayerTurn;
+public abstract record PlayerTurn
+{
+    public sealed record DoNothing : PlayerTurn;
+    public sealed record Move(Point Delta) : PlayerTurn;
+    public sealed record Teleport() : PlayerTurn;
+}
+
+public enum StepResult
+{
+    Incorrect,
+    PlayerAlive,
+    PlayerDied
+}
 
 
 // TODO: remove me
@@ -64,7 +73,7 @@ public class GameMap
         }
     }
 
-    public void Step()
+    public StepResult Step(PlayerTurn turn)
     {
         var player = GetPlayer();
         var newMap = new Dictionary<Point, List<Cell>>();
@@ -107,6 +116,7 @@ public class GameMap
         newPlyCells.Add(player);
         newMap[player.Position] = newPlyCells;
         map = newMap;
+        return StepResult.PlayerAlive;
     }
 
     private Point RandomPos()

@@ -95,7 +95,7 @@ public static class GameMapExtension
         gameMap.ValidateMapInternalPos("Before step 1");
         for (int i = 0; i < n; i++)
         {
-            gameMap.Step();
+            gameMap.Step(new PlayerTurn.DoNothing());
             gameMap.ValidateMapInternalPos($"After number of steps done: {i + 1}");
         }
     }
