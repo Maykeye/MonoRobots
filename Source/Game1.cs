@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -32,7 +33,7 @@ public class Game1 : Game
 
     void ResetMap()
     {
-        var robots = gameMap.Size.X * gameMap.Size.Y / 2;
+        var robots = gameMap.Size.X * gameMap.Size.Y / 32;
         gameMap.Reset(robots);
     }
 
@@ -40,8 +41,9 @@ public class Game1 : Game
     {
         spriteBatch = new SpriteBatch(GraphicsDevice);
         groundTexture = Texture2D.FromFile(GraphicsDevice, "Assets/Ground.png");
-        // TODO: use this.Content to load your game content here (robo, garbo, ply)
-
+        robotTexture = Texture2D.FromFile(GraphicsDevice, "Assets/Robot.png");
+        garboTexture = Texture2D.FromFile(GraphicsDevice, "Assets/Garbage.png");
+        playerTexture = Texture2D.FromFile(GraphicsDevice, "Assets/Player.png");
     }
 
     protected override void Update(GameTime gameTime)
@@ -87,14 +89,52 @@ public class Game1 : Game
         }
     }
 
+    private void DrawRobots()
+    {
+        var tileSz = ViewportTileSize;
+        foreach (var robot in gameMap.FindKind(CellKind.Robot))
+        {
+            var tilePos = ViewportTilePos(robot.Position.X, robot.Position.Y);
+            var tileRect = new Rectangle((int)tilePos.X, (int)tilePos.Y, (int)tileSz.X, (int)tileSz.Y);
+            spriteBatch.Draw(robotTexture, tileRect, Color.White);
+        }
+    }
+
+    private void DrawPlayer()
+    {
+        var tileSz = ViewportTileSize;
+        var ply = gameMap.GetPlayer();
+        var tilePos = ViewportTilePos(ply.Position.X, ply.Position.Y);
+        var tileRect = new Rectangle((int)tilePos.X, (int)tilePos.Y, (int)tileSz.X, (int)tileSz.Y);
+
+        if (ply.Alive)
+        {
+            spriteBatch.Draw(playerTexture, tileRect, Color.White);
+        }
+        else
+        {
+            spriteBatch.Draw(
+                playerTexture,
+                tileRect,
+                null,
+                Color.Red,
+                0f,
+                Vector2.Zero,
+                SpriteEffects.FlipVertically,
+                0f
+            );
+        }
+    }
+
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         // In viewport pixels
-
         spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         DrawGround();
+        DrawRobots();
+        DrawPlayer();
         spriteBatch.End();
 
         base.Draw(gameTime);

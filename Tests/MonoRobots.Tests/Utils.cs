@@ -16,19 +16,9 @@ public static class GameMapExtension
 {
     public static Cell GetPlayer(this GameMap gameMap)
     {
-        var plys = gameMap.FindKind(CellKind.Player);
+        var plys = gameMap.FindKind(CellKind.Player).ToList();
         plys.Count.ShouldBe(1, "Exactly one player should exist");
         return plys[0];
-    }
-
-    public static List<Cell> FindKind(this GameMap gameMap, CellKind kind)
-    {
-        var foundCells = gameMap.map.Values
-            .SelectMany(val => val) // flatten [[a,b,c], [d,e,f]] => [a,b,c,d,e,f]
-            .Where(cell => cell.Kind == kind)
-            .ToList();
-
-        return foundCells;
     }
 
     public static void ValidateKindByPos(this GameMap gameMap, CellKind kind, params int[] xys)
@@ -50,7 +40,7 @@ public static class GameMapExtension
     /// </summary>
     public static int Count(this GameMap gameMap, CellKind kind)
     {
-        return gameMap.FindKind(kind).Count;
+        return gameMap.FindKind(kind).ToList().Count;
     }
 
 

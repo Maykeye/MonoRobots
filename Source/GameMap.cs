@@ -236,5 +236,15 @@ public class GameMap
         plyCellOcs.Add(ply);
         map[ply.Position] = plyCellOcs;
     }
+
+
+
+    public IEnumerable<Cell> FindKind(CellKind kind)
+    {
+        return map.Values
+            .SelectMany(val => val) // flatten [[a,b,c], [d,e,f]] => [a,b,c,d,e,f]
+            .Where(cell => cell.Kind == kind);
+
+    }
 }
 
