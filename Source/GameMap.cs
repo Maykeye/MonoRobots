@@ -81,6 +81,12 @@ public class GameMap
     public StepResult Step(PlayerTurn turn)
     {
         var player = GetPlayer();
+
+        // Dead player can only idle
+        if (!player.Alive && turn is not PlayerTurn.DoNothing)
+            return StepResult.Incorrect;
+
+        // Hanlde healthy ply move
         switch (turn)
         {
             case PlayerTurn.DoNothing: // Do nothing 
@@ -211,7 +217,7 @@ public class GameMap
             .FirstOrDefault() ?? throw new Exception("Player not found");
     }
 
-    public void SetPlayerPosition(int x, int y)
+    public void SetPlayerPosition(Point plyPos)
     {
         foreach (var (pos, ocs) in map)
         {
@@ -223,7 +229,7 @@ public class GameMap
         }
         var ply = new Cell
         {
-            Position = new(x, y),
+            Position = plyPos,
             Kind = CellKind.Player
         };
         var plyCellOcs = map.GetValueOrDefault(ply.Position, []);

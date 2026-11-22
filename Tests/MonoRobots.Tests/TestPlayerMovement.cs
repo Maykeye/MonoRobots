@@ -21,7 +21,7 @@ public class TestPlayerMovement
         var playerPos = map.PointOnMapEdge(mapDirection);
         rng.EnqueueInts(10, 20);
         map.Reset(1);
-        map.SetPlayerPosition(playerPos.X, playerPos.Y);
+        map.SetPlayerPosition(playerPos);
         var res = map.Step(new PlayerTurn.Move(mapDirection.Point()));
         res.ShouldBe(StepResult.Incorrect);
         map.ValidateRbtGarbo([10, 20], []); //no movement of robot
@@ -81,6 +81,20 @@ public class TestPlayerMovement
         rng.EnqueueInts(plyNewPos);
         var stepRes = map.Step(new PlayerTurn.Teleport());
         map.ValidateRbtGarbo([plyNewPos.X, plyNewPos.Y], []);
+        stepRes.ShouldBe(StepResult.PlayerDied); // always by dead in this test
+    }
+
+    [Theory]
+    [MemberData(nameof(Utils.COMPASS_8), MemberType = typeof(Utils))]
+    public void TestMoveDirectlyOntoRobot(Pt direction)
+    {
+        var delta = direction.Point();
+        var robotPos = new Point(5, 3);
+        map.Reset(0);
+        map.SetPlayerPosition(robotPos - delta);
+        map.Spawn(robotPos, CellKind.Robot);
+        var stepRes = map.Step(new PlayerTurn.Move(delta));
+        map.ValidateRbtGarbo([robotPos.X, robotPos.Y], []);
         stepRes.ShouldBe(StepResult.PlayerDied); // always by dead in this test
     }
 

@@ -66,7 +66,7 @@ public class TestGameMap
     public void TestSetPlayerPos()
     {
         map.Reset(2);
-        map.SetPlayerPosition(2, 4);
+        map.SetPlayerPosition(new(2, 4));
         map.GetPlayer().Position.ShouldBe(new(2, 4));
         map.ValidateRbtGarbo(2, 0);
     }
@@ -76,7 +76,7 @@ public class TestGameMap
     {
         rng.EnqueueInts([10, 12]);
         map.Reset(0);
-        map.SetPlayerPosition(10, 10);
+        map.SetPlayerPosition(new(10, 10));
         map.Spawn(new(4, 5), CellKind.Garbage).ShouldBeTrue("Spawn garbo");
         map.ValidateIdleStep();
         map.ValidateRbtGarbo([], [4, 5]);
@@ -102,8 +102,8 @@ public class TestGameMap
         var delta = deltaKind.Point();
         map.Reset(0);
         map.Spawn(new(10, 12), CellKind.Garbage);
-        map.SetPlayerPosition(10 + delta.X, 12 + delta.Y); // ply behind garbo
-        var robotPos = new Point(10 - delta.X, 12 - delta.Y); //  rbt on opposite side
+        map.SetPlayerPosition(new(10 + delta.X, 12 + delta.Y));  // ply behind garbo
+        var robotPos = new Point(10 - delta.X, 12 - delta.Y); // rbt on opposite side
         map.Spawn(robotPos, CellKind.Robot);
         map.ValidateRbtGarbo([robotPos.X, robotPos.Y], [10, 12]);
         map.ValidateIdleStep();
