@@ -90,7 +90,7 @@ public static class GameMapExtension
         gameMap.Count(CellKind.Garbage).ShouldBe(garbo);
     }
 
-    public static void SafeStep(this GameMap gameMap, int n = 1)
+    public static void ValidateIdleStep(this GameMap gameMap, int n = 1)
     {
         gameMap.ValidateMapInternalPos("Before step 1");
         for (int i = 0; i < n; i++)

@@ -27,11 +27,12 @@ public class TestGameMap
     [InlineData(1000, false)]
     public void TestRetainPlayerPos(int turns, bool alive)
     {
-        rng.EnqueueInts([18, 12]); // x=ply.x+2, y=ply.y
+        var robotPos = home_point + new Point(2, 0);
+        rng.EnqueueInts(robotPos); // x=ply.x+2, y=ply.y
         map.Reset(1);
-        map.SafeStep(turns);
+        map.ValidateIdleStep(turns);
         var ply = map.GetPlayer();
-        ply.Position.ShouldBe(new(16, 12));
+        ply.Position.ShouldBe(home_point);
         ply.Alive.ShouldBe(alive);
         map.ValidateRbtGarbo(1, 0);
     }
@@ -57,7 +58,7 @@ public class TestGameMap
     {
         rng.EnqueueInts(18, 12);
         map.Reset(1);
-        map.SafeStep();
+        map.ValidateIdleStep();
         map.ValidateRbtGarbo([17, 12], []);
     }
 
@@ -77,7 +78,7 @@ public class TestGameMap
         map.Reset(0);
         map.SetPlayerPosition(10, 10);
         map.Spawn(new(4, 5), CellKind.Garbage).ShouldBeTrue("Spawn garbo");
-        map.SafeStep();
+        map.ValidateIdleStep();
         map.GetAt(new(4, 5), cells).ShouldBeTrue($"Garbo didn't stay: {map.MapDump()}");
         map.map.Count.ShouldBe(2, "Player + Garbo");
     }
@@ -89,7 +90,7 @@ public class TestGameMap
         map.Reset(0);
         map.Spawn(r1.Add(Pt.HOME), CellKind.Robot);
         map.Spawn(r2.Add(Pt.HOME), CellKind.Robot);
-        map.SafeStep();
+        map.ValidateIdleStep();
         map.ValidateRbtGarbo([], [home_point.X, home_point.Y]);
         map.GetPlayer().Alive.ShouldBeFalse($"Ply: {map.MapDump()}");
     }
@@ -105,7 +106,7 @@ public class TestGameMap
         var robotPos = new Point(10 - delta.X, 12 - delta.Y); //  rbt on opposite side
         map.Spawn(robotPos, CellKind.Robot);
         map.ValidateRbtGarbo([robotPos.X, robotPos.Y], [10, 12]);
-        map.SafeStep();
+        map.ValidateIdleStep();
         map.ValidateRbtGarbo([], [10, 12]);
         map.GetPlayer().Alive.ShouldBeTrue();
     }
@@ -119,7 +120,7 @@ public class TestGameMap
         var robotSpawn = home_point + delta * 2; // E.g. @.R.
         rng.EnqueueInts(robotSpawn.X, robotSpawn.Y);
         map.Reset(1);
-        map.SafeStep();
+        map.ValidateIdleStep();
         var dst = home_point + delta; // E.g. @R..
         map.ValidateRbtGarbo([dst.X, dst.Y], []);
     }
@@ -139,7 +140,7 @@ public class TestGameMap
             var delta = deltaKind.Point();
             rng.EnqueueInts(spawn1, spawn2);
             map.Reset(2);
-            map.SafeStep();
+            map.ValidateIdleStep();
             var dst1 = home_point + delta * 1; // E.g. @RR.
             var dst2 = home_point + delta * 2; // 
             map.ValidateRbtGarbo([dst1.X, dst1.Y, dst2.X, dst2.Y], []);
