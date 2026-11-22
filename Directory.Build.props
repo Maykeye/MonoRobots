@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <MonoGameVersion>3.8.*</MonoGameVersion>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)Output/bin/$(MSBuildProjectName)/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)Output/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

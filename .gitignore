@@ -1,9 +1,6 @@
 stdout.txt
 *.xnb
+Output
 Content/bin/
 Content/obj/
-Source/*/bin/
-Source/*/obj/
-Platforms/*/bin/
-Platforms/*/obj/
 .vscode
