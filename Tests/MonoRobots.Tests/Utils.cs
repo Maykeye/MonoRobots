@@ -33,6 +33,7 @@ public static class GameMapExtension
 
     public static void ValidateKindByPos(this GameMap gameMap, CellKind kind, params int[] xys)
     {
+        gameMap.ValidateMapInternalPos();
         (xys.Length % 2).ShouldBe(0, "Internal error: pass XYs pairs");
         for (int i = 0; i < xys.Length; i += 2)
         {
@@ -51,6 +52,25 @@ public static class GameMapExtension
     {
         return gameMap.FindKind(kind).Count;
     }
+
+
+    /// <summary>
+    /// By one of the Pt from COMPASS_8 return map point on edge of the map
+    /// e.g. 0,0 for NW, (width-1, height-1) for SE
+    /// </summary>
+    public static Point PointOnMapEdge(this GameMap gameMap, Pt mapDirection) // only COMPASS8 is accepted
+    {
+        var homePoint = gameMap.Size / 2;
+        // Ensure direction was passed, not something other
+        Utils.COMPASS_8.Select(x => x.Data).Contains(mapDirection).ShouldBeTrue();
+
+        var delta = mapDirection.Point() * gameMap.Size; // -32, -24
+        var edgePos = homePoint + delta; // eg -16, -12
+        edgePos.X = Math.Clamp(edgePos.X, 0, gameMap.Size.X - 1);
+        edgePos.Y = Math.Clamp(edgePos.Y, 0, gameMap.Size.Y - 1);
+        return edgePos;
+    }
+
 
 
     /// <summary>

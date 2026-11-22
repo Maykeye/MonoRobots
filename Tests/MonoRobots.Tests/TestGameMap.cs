@@ -16,7 +16,7 @@ public class TestGameMap
         rng = new MockRng();
         cells = [];
         map = new GameMap(32, 24, rng);
-        home_point = map.size / 2;
+        home_point = map.Size / 2;
     }
 
     [Theory]
@@ -79,7 +79,7 @@ public class TestGameMap
         map.SetPlayerPosition(10, 10);
         map.Spawn(new(4, 5), CellKind.Garbage).ShouldBeTrue("Spawn garbo");
         map.ValidateIdleStep();
-        map.GetAt(new(4, 5), cells).ShouldBeTrue($"Garbo didn't stay: {map.MapDump()}");
+        map.ValidateRbtGarbo([], [4, 5]);
         map.map.Count.ShouldBe(2, "Player + Garbo");
     }
 

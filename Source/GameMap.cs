@@ -46,12 +46,12 @@ public struct Cell
 public class GameMap
 {
     internal Dictionary<Point, List<Cell>> map;
-    internal Point size;
+    internal Point Size;
     readonly Random rng;
 
     public GameMap(int width = 32, int height = 32, Random rng = null)
     {
-        size = new Point(width, height);
+        Size = new Point(width, height);
         this.rng = rng ?? Random.Shared;
         Reset(width);
     }
@@ -59,10 +59,10 @@ public class GameMap
     public void Reset(int robots)
     {
         robots = int.Max(robots, 0);
-        robots = int.Min(robots, size.X * size.Y / 2);
+        robots = int.Min(robots, Size.X * Size.Y / 2);
         map = [];
 
-        var playerPos = size / 2;
+        var playerPos = Size / 2;
         Spawn(playerPos, CellKind.Player);
 
         for (int i = 0; i < robots; i++)
@@ -73,9 +73,31 @@ public class GameMap
         }
     }
 
+    private bool InMap(Point p)
+    {
+        return 0 <= p.X && p.X < Size.X && 0 <= p.Y && p.Y < Size.Y;
+    }
+
     public StepResult Step(PlayerTurn turn)
     {
         var player = GetPlayer();
+        switch (turn)
+        {
+            case PlayerTurn.DoNothing: // Do nothing 
+                break;
+
+            case PlayerTurn.Move move:
+                player.Position += move.Delta;
+                if (!InMap(player.Position))
+                    return StepResult.Incorrect;
+                break;
+
+            case PlayerTurn.Teleport:
+                player.Position = RandomFreePos();
+                break;
+        }
+
+
         var newMap = new Dictionary<Point, List<Cell>>();
 
         // Copy unmoveable garbo
@@ -116,28 +138,30 @@ public class GameMap
         newPlyCells.Add(player);
         newMap[player.Position] = newPlyCells;
         map = newMap;
-        return StepResult.PlayerAlive;
+        return player.Alive ? StepResult.PlayerAlive : StepResult.PlayerDied;
     }
 
     private Point RandomPos()
     {
-        return new Point(rng.Next(size.X), rng.Next(size.Y));
+        return new Point(rng.Next(Size.X), rng.Next(Size.Y));
     }
 
-    public bool GetAt(Point pos, ICollection<Cell> cells)
+    public Point RandomFreePos()
     {
-        bool res = false;
-        foreach (var cell in map.GetValueOrDefault(pos, []))
+        while (true)
         {
-            cells.Add(cell);
-            res = true;
+            var pos = RandomPos();
+            if (!map.ContainsKey(pos))
+            {
+                return pos;
+            }
         }
-        return res;
+
     }
 
     internal bool Spawn(Point point, CellKind kind)
     {
-        if (GetAt(point, []))
+        if (map.ContainsKey(point))
         {
             return false;
         }
